@@ -50,12 +50,6 @@ var train = {
         var tickYYYYMMDD =  yy.toString() + "-" + ((mm<10?"0":"") + mm.toString()) + "-" + ((dd<10?"0":"")+dd.toString());
         var tickTnow =  tickYYYYMMDD + 'T' + ((hh<10?"0":"") + hh.toString()) + ':' + ((mi<10?"0":"") + mi.toString()) + ':00';
         var tickTime =  tickYYYYMMDD + 'T' + tick + ':00';
-        
-        //  var t=(Date.parse(tickTime)).valueOf();
-        //  var n=(Date.parse(tickTnow)).valueOf();
-        //  var diff=(t-n)/ (1000 * 60 );
-        //  console.log( tickTnow + '||' + tickTime  + '||' +  diff);
-        //return parseInt(diff);
         return parseInt(((Date.parse(tickTime)).valueOf()-(Date.parse(tickTnow)).valueOf())/ (1000 * 60 ));
     },
     checkOnline:function(trainName){
@@ -128,7 +122,7 @@ var train = {
             const tr = this._trains[k];
             var dir,Time1,Time2,Time3;
             var TrainN="",TrainS="";
-            var trKind="",trDir="", trPos="";
+            var trKind="",trDir="", trPos="",trName="";
             dir=tr.dir;
             Time2=tr.aTime;
             if (dir=="N"){
@@ -160,21 +154,18 @@ var train = {
                     trKind="_EMU700";
                     break;
             };
+            //車輛名稱
+            trName="<ruby><rp>(</rp><rt><span class='stNorth " +  trDir + "' style='font-size: 2em;' >"+tr.train+"</span></rt><rp>)</rp></ruby>"
+            console.log(trName);
             //車輛目前位置
-            //trPos="passN1";
-            //console.log(JSON.stringify(tr));
-            
             var posT=[this.vsTime(tr.sTime),this.vsTime(tr.aTime),this.vsTime(tr.eTime)];
-            // console.log(this.vsTime(tr.aTime));
-            // console.log(posT);
+            // console.log(this.vsTime(tr.aTime));// console.log(posT);
             //var posi=[this.vsTime(tr.sTime),this.vsTime(tr.aTime),this.vsTime(tr.eTime)];
             var posS=["","",""];
             posS[0]=(posT[0]>=0)?0:(posT[0]==-1)?1:(posT[0]>0)?3:2;
             posS[1]=(posT[1]==0)?1:(posT[1]==-1)?2:(posT[1]>0)?3:2;
             posS[2]=(posT[2]==0)?1:(posT[2]==-1)?2:(posT[2]>0)?3:2;
-            // console.log(posT);
-            // console.log(posS);
-            
+            // console.log(posT);// console.log(posS);
             if (posS[0]==0){
                 trPos="stay" + dir + "0";
             }else if (posS[0]==1){
@@ -193,45 +184,18 @@ var train = {
                     trPos="stay" + dir + "3"; 
                 }
             }
-
-            // if (posi[0]==0){
-            //     trPos="stay" + dir + "0";
-            // }else if(posi[0]==-1){
-            //     trPos="pass" + dir + "1";
-            // }else if(posi[0]<=-1){
-
-            //     trPos="stay" + dir + "1";
-            // }
-            
-            // if(posi[1]==0){
-            //     trPos="pass" + dir + "2";
-            // }else if(posi[1]<=-1){
-            //     trPos="stay" + dir + "2";
-            // }else if(posi[2]==0){
-            //     trPos="pass" + dir + "3";
-            // }else if(posi[2]<=-1){
-            //     trPos="stay" + dir + "3";
-            // }
-            console.log(dir + " @ " + tr.train  + " @ " + 
-            this.vsTime(tr.sTime) + " @ " +
-            this.vsTime(tr.aTime) + " @ " +
-            this.vsTime(tr.eTime));
+            //console.log(dir + " @ " + tr.train  + " @ " +  this.vsTime(tr.sTime) + " @ " + this.vsTime(tr.aTime) + " @ " + this.vsTime(tr.eTime));
             var divTrain="<div class='test'>" +
                 "<div class='row fs-5'>" +
-                //"    <div class='col-sm-1 text-primary'>"+TrainN+"</div>" +
                 "    <div class='col-1'></div>" +
                 "    <div class='col-1 station'>"+Time1+"</div>" +
-                "    <div class='col-8 station stDiv'>"+
-                "<span class='stNorth'>"+TrainN+"</span>"+Time2+
-                "<span class='stSouth'>"+TrainS+"</span>"+"</div>" +
+                "    <div class='col-8 station stDiv'>"+Time2+"</div>"+
                 "    <div class='col-1 station'>"+Time3+"</div>" +
                 "    <div class='col-1'></div>" +
-                //"    <div class='col-sm-1 text-primary'>"+TrainS+"</div>" +
                 "</div>" +
                 "<div class='row'>" +
                 "    <div class='col-12 trains'>" +
-                // "        <div class='Train _TEMU2000 Go2N passN1'></div>" +
-                "        <div class='Train " + trKind + " " + trDir + " " + trPos + "'></div>" +
+                "        <div class='Train " + trKind + " " + trDir + " " + trPos + "'>" + trName + "</div>" +
                 "    </div>" +
                 "</div>" +
                 "</div>";
