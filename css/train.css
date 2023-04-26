@@ -99,6 +99,7 @@ background-position: 0px 0px;
 background-repeat: no-repeat no-repeat;
   } */
 
+ruby .Go2S::after,ruby .Go2N::before{content: "★";}
   .loader{
     width:30px;
     height:30px;
