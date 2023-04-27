@@ -75,10 +75,6 @@ html,body{
   background-size: 100% 88%;
   background-repeat: no-repeat; background-position: bottom;
 }
-@media screen and (max-width: 1200px) { 
-  .Train {background-size: 120% 50%;} 
-  ruby .Go2S,ruby .Go2N{ font-size: 1em;}
-} 
   /* .Train_xx{
     border: 1px solid red;
      position: absolute; 
@@ -114,3 +110,8 @@ background-repeat: no-repeat no-repeat;
     0%{ transform: rotate(0deg);}
     100%{ transform: rotate(360deg);}
   }
+
+  @media screen and (max-width: 900px) { 
+    .Train {background-size: 120% 50%;} 
+    ruby .Go2S,ruby .Go2N{ font-size: .8em;}
+  } 
