@@ -155,7 +155,7 @@ var train = {
                     break;
             };
             //車輛名稱
-            trName="<ruby><rp>(</rp><rt><span class='stNorth " +  trDir + "' style='font-size: 2em;' >"+tr.train+"</span></rt><rp>)</rp></ruby>"
+            trName="<ruby><rp>(</rp><rt><span class='stNorth " +  trDir + "'>"+tr.train+"</span></rt><rp>)</rp></ruby>"
             console.log(trName);
             //車輛目前位置
             var posT=[this.vsTime(tr.sTime),this.vsTime(tr.aTime),this.vsTime(tr.eTime)];
