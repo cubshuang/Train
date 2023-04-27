@@ -30,8 +30,6 @@ html,body{
 @keyframes passS2 { from { left:  16.33%; scale: 2;bottom: 20px} to { left: 75.33%; scale: 2;bottom: 20px} }
 @keyframes passS3 { from { left:  75.33%; } to { left: 91.66%; } }
 
-
-
 .pass {
   animation-duration: 10s;
   animation-name: slidein;
@@ -43,14 +41,8 @@ html,body{
 .trains,.trains > div,.ST_L,.ST_M,.ST_R {
   position: relative;
 }
-/* .trains > .Go2N {
-  position: relative;
-  left:91.7%;
-}
-.trains > .Go2S {
-  position: relative;
-  left:0;
-} */
+/* .trains > .Go2N { position: relative; left:91.7%; }
+.trains > .Go2S { position: relative; left:0;} */
 .stDiv{position:relative;}
 .stNorth,.stSouth{ position: absolute; color: rgb(240, 67, 36); }
 .stNorth{ left:0; }
@@ -80,8 +72,13 @@ html,body{
   width: 8.333%;
   height: 60px;
   /* background-color: rgba(0, 0, 0, 0); */
-  background-size: 100% 100%;
+  background-size: 100% 88%;
+  background-repeat: no-repeat; background-position: bottom;
 }
+@media screen and (max-width: 1200px) { 
+  .Train {background-size: 120% 50%;} 
+  ruby .Go2S,ruby .Go2N{ font-size: 1em;}
+} 
   /* .Train_xx{
     border: 1px solid red;
      position: absolute; 
@@ -99,7 +96,10 @@ background-position: 0px 0px;
 background-repeat: no-repeat no-repeat;
   } */
 
-ruby .Go2S::after,ruby .Go2N::before{content: "★";}
+   /* ruby .Go2S::after { content: "→"; } ruby .Go2N::before { content: "←"; } */
+   ruby .Go2S::after,ruby .Go2N::before{content: "★"; }
+   ruby .Go2S,ruby .Go2N{ font-size: 2em;}
+
   .loader{
     width:30px;
     height:30px;
