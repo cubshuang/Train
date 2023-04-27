@@ -113,5 +113,5 @@ background-repeat: no-repeat no-repeat;
 
   @media screen and (max-width: 900px) { 
     .Train {background-size: 120% 50%;} 
-    ruby .Go2S,ruby .Go2N{ font-size: .8em;}
+    ruby .Go2S,ruby .Go2N{ font-size: 1.1em;}
   } 
