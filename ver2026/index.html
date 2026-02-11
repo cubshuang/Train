@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>台鐵全功能調度模擬器 - 完整支架警報版</title>
+    <style>
+        :root { --rail-top: 65%; }
+        body { margin: 0; background: #2ecc71; overflow: hidden; font-family: "Microsoft JhengHei", sans-serif; }
+        
+        /* 背景地景 */
+        .forest-bg { position: absolute; width: 100%; height: var(--rail-top); background: linear-gradient(to bottom, #87CEEB 60%, #2ecc71 100%); z-index: 1; }
+        .tree { position: absolute; bottom: 0; font-size: 40px; opacity: 0.8; pointer-events: none; }
+        .road { position: absolute; top: 0; left: 50%; width: 160px; height: 100%; background: #444; transform: translateX(-50%); border-left: 5px dashed #fff; border-right: 5px dashed #fff; z-index: 2; }
+        .railway { position: absolute; top: var(--rail-top); width: 100%; height: 20px; background: repeating-linear-gradient(90deg, #333 0, #333 10px, #aaa 10px, #aaa 40px); border-top: 4px solid #111; border-bottom: 4px solid #111; z-index: 5; }
+
+        /* 警報燈支架結構 */
+        .signal-post { position: absolute; top: calc(var(--rail-top) - 100px); left: calc(50% - 200px); width: 60px; height: 100px; z-index: 25; pointer-events: none; }
+        .signal-post.right { left: calc(50% + 120px); }
+        
+        /* 垂直立柱 */
+        .pole { position: absolute; bottom: 0; left: 50%; width: 6px; height: 100%; background: #222; transform: translateX(-50%); border-radius: 3px; }
+        /* 水平橫桿 */
+        .cross-arm { position: absolute; top: 20px; left: 0; width: 100%; height: 4px; background: #222; border-radius: 2px; }
+        
+        /* 燈頭樣式 */
+        .lamp { width: 18px; height: 18px; background: #300; border: 2px solid #000; border-radius: 50%; position: absolute; top: 11px; }
+        .lamp.left { left: 0; } .lamp.right { right: 0; }
+        
+        @keyframes flash-red { 0%, 49% { background: #f00; box-shadow: 0 0 15px #f00; } 50%, 100% { background: #300; box-shadow: none; } }
+        .active .lamp.left { animation: flash-red 0.8s infinite; }
+        .active .lamp.right { animation: flash-red 0.8s infinite 0.4s; }
+
+        /* CCTV 監視器 */
+        #cctv-monitor { position: fixed; top: 20px; right: 20px; width: 240px; height: 160px; background: #000; border: 4px solid #333; border-radius: 8px; z-index: 2000; overflow: hidden; }
+        #cctv-live-content { position: absolute; top: 0; left: 0; width: 1000%; height: 1000%; transform: scale(0.1); transform-origin: top left; pointer-events: none; }
+        .cctv-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,255,0,0.05); z-index: 2001; color: #0f0; font-family: monospace; padding: 5px; font-size: 10px; }
+
+        /* 控制面板 */
+        #control-panel { position: fixed; top: 20px; left: 20px; z-index: 1000; background: rgba(255, 255, 255, 0.9); padding: 12px; border-radius: 12px; width: 210px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .btn-group { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; }
+        button { padding: 8px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; color: white; display: flex; justify-content: space-between; font-size: 13px; }
+        .btn-tz { background: #e74c3c; } .btn-ck { background: #e67e22; } .btn-lo { background: #3498db; }
+        .btn-auto { background: #9b59b6; justify-content: center; }
+        .btn-emergency { background: #000; color: #ff0; border: 2px solid #f00; justify-content: center; }
+        #status-display { margin-top: 10px; padding: 5px; background: #333; color: #0f0; font-family: monospace; font-size: 12px; text-align: center; border-radius: 4px; }
+
+        /* 火車動畫 */
+        .train-container { position: absolute; top: calc(var(--rail-top) - 32px); display: flex; gap: 2px; z-index: 10; white-space: nowrap; }
+        .car { height: 26px; padding: 4px 10px; border-radius: 3px; font-size: 12px; color: white; font-weight: bold; display: flex; align-items: center; box-shadow: 1px 2px 4px rgba(0,0,0,0.3); }
+        .tz .car { background: #e74c3c; } .ck .car { background: #e67e22; } .lo .car { background: #3498db; }
+        
+        @keyframes move-south { from { transform: translateX(-120%); } to { transform: translateX(110vw); } }
+        @keyframes move-north { from { transform: translateX(110vw); } to { transform: translateX(-120%); } }
+        .paused { animation-play-state: paused !important; }
+
+        /* 柵欄樣式 */
+        .barrier { width: 110px; height: 10px; background: #ff0; border: 2px solid #000; position: absolute; 
+                top: calc(var(--rail-top) - 7px); 
+                left: calc(50% - 110px); transform-origin: left center; transition: 1s; transform: rotate(-90deg); z-index: 20; }
+        .barrier.right { 
+            left: calc(50% + 0px); transform-origin: right center;
+            top:calc(var(--rail-top) + 20px);
+         }
+        .barrier.down { transform: rotate(0deg);
+            top: calc(var(--rail-top) - 12px);
+        }
+        .barrier.down.right { transform: rotate(0deg);
+            top:calc(var(--rail-top) + 25px);
+        }
+    </style>
+</head>
+<body>
+
+<div id="cctv-monitor">
+    <div class="cctv-overlay">CCTV CH-1 <span id="rec-dot" style="color:red; display:none;">● REC</span></div>
+    <div id="cctv-screen">
+        <div id="cctv-live-content">
+            <div class="forest-bg" id="cctv-forest"></div>
+            <div class="road"></div>
+            <div class="railway" style="width: 1000%"></div>
+            <!-- CCTV 鏡射支架與燈 -->
+            <div class="signal-post cctv-sig" id="cctv-sig-l"><div class="pole"></div><div class="cross-arm"></div><div class="lamp left"></div><div class="lamp right"></div></div>
+            <div class="signal-post right cctv-sig" id="cctv-sig-r"><div class="pole"></div><div class="cross-arm"></div><div class="lamp left"></div><div class="lamp right"></div></div>
+        </div>
+    </div>
+</div>
+
+<div class="forest-bg" id="main-forest"></div>
+<div class="road"></div>
+<div class="railway"></div>
+
+<!-- 主畫面支架與燈 -->
+<div class="signal-post" id="sig-l"><div class="pole"></div><div class="cross-arm"></div><div class="lamp left"></div><div class="lamp right"></div></div>
+<div class="signal-post right" id="sig-r"><div class="pole"></div><div class="cross-arm"></div><div class="lamp left"></div><div class="lamp right"></div></div>
+
+<div id="control-panel">
+    <h3 style="margin:0; text-align:center; font-size: 16px;">🌲 調度控制中心</h3>
+    <div class="btn-group">
+        <button class="btn-tz" onclick="requestTrain('tz', 'south')">自強 南 <kbd>A</kbd></button>
+        <button class="btn-ck" onclick="requestTrain('ck', 'south')">莒光 南 <kbd>S</kbd></button>
+        <button class="btn-lo" onclick="requestTrain('lo', 'south')">區間 南 <kbd>D</kbd></button>
+        <button class="btn-tz" onclick="requestTrain('tz', 'north')">自強 北 <kbd>J</kbd></button>
+        <button class="btn-ck" onclick="requestTrain('ck', 'north')">莒光 北 <kbd>K</kbd></button>
+        <button class="btn-lo" onclick="requestTrain('lo', 'north')">區間 北 <kbd>L</kbd></button>
+        <button class="btn-auto" id="autoBtn" onclick="toggleAuto()">開啟自動模式</button>
+        <button class="btn-emergency" onclick="emergencyStop()">緊急停止 <kbd>Space</kbd></button>
+    </div>
+    <div id="status-display">線上列車：<span id="train-count-num">0</span></div>
+</div>
+
+<div id="bar-l" class="barrier"></div>
+<div id="bar-r" class="barrier right"></div>
+
+<script>
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const trainData = { 'tz': { class: 'tz', min: 4, max: 6 }, 'ck': { class: 'ck', min: 7, max: 10 }, 'lo': { class: 'lo', min: 11, max: 15 } };
+    let trainCount = 0, autoTimer = null, isEmergency = false;
+
+    function playHorn() {
+        const playTone = (freq, start, duration) => {
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(freq, audioCtx.currentTime + start);
+            gain.gain.setValueAtTime(0, audioCtx.currentTime + start);
+            gain.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + start + 0.05);
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + start + duration);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(audioCtx.currentTime + start); osc.stop(audioCtx.currentTime + start + duration);
+        };
+        playTone(330, 0, 0.6); playTone(440, 0, 0.6); playTone(330, 0.8, 0.4); playTone(440, 0.8, 0.4); 
+    }
+
+    function createForest(id) {
+        const c = document.getElementById(id);
+        for(let i=0; i<15; i++) {
+            const t = document.createElement('div'); t.className = 'tree'; t.innerText = ['🌲','🌳'][Math.floor(Math.random()*2)];
+            t.style.left = Math.random() * 100 + '%'; t.style.bottom = Math.random() * 15 + 'px';
+            t.style.fontSize = (25 + Math.random()*25) + 'px'; c.appendChild(t);
+        }
+    }
+    createForest('main-forest'); createForest('cctv-forest');
+
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') emergencyStop();
+        const map = { 'a':['tz','south'], 's':['ck','south'], 'd':['lo','south'], 'j':['tz','north'], 'k':['ck','north'], 'l':['lo','north'] };
+        if (map[e.key.toLowerCase()]) requestTrain(...map[e.key.toLowerCase()]);
+    });
+
+    function requestTrain(type, dir, isAuto = false) {
+        if (isEmergency) return;
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        trainCount++;
+        updateDisplay();
+        if (!isAuto) { 
+            //playBell(); 
+            setTimeout(playHorn, 1500); 
+        }
+        setTimeout(() => spawnTrain(type, dir), 2500);
+    }
+
+    function updateDisplay() {
+        document.getElementById('train-count-num').innerText = trainCount;
+        const sigs = document.querySelectorAll('.signal-post');
+        if (trainCount > 0) {
+            document.getElementById('bar-l').classList.add('down');
+            document.getElementById('bar-r').classList.add('down');
+            document.getElementById('rec-dot').style.display = 'inline';
+            sigs.forEach(s => s.classList.add('active'));
+        } else {
+            document.getElementById('bar-l').classList.remove('down');
+            document.getElementById('bar-r').classList.remove('down');
+            document.getElementById('rec-dot').style.display = 'none';
+            sigs.forEach(s => s.classList.remove('active'));
+        }
+    }
+
+    function playBell() {
+        const bell = setInterval(() => {
+            if (trainCount <= 0 || isEmergency) return clearInterval(bell);
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.frequency.value = 850; gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+        }, 600);
+    }
+
+    function spawnTrain(type, dir) {
+        if (isEmergency) return;
+        const config = trainData[type];
+        const duration = (Math.random() * (config.max - config.min) + config.min).toFixed(1);
+        const carCount = Math.floor(Math.random() * 4) + 6;
+        const train = document.createElement('div');
+        train.className = `train-container ${config.class}`;
+        for (let i = 0; i < carCount; i++) {
+            const car = document.createElement('div'); car.className = 'car';
+            if (dir === 'south') { if (i === carCount-1) car.innerHTML = '🚂'; else car.innerText = '客'; }
+            else { if (i === 0) car.innerHTML = '🚂'; else car.innerText = '客'; train.style.transform = 'scaleX(-1)'; }
+            train.appendChild(car);
+        }
+        train.style.animation = `${dir === 'south' ? 'move-south' : 'move-north'} ${duration}s linear forwards`;
+        document.body.appendChild(train);
+        const mirror = train.cloneNode(true); document.getElementById('cctv-live-content').appendChild(mirror);
+        train.addEventListener('animationend', () => {
+            train.remove(); mirror.remove(); trainCount--; updateDisplay();
+        });
+    }
+
+    function emergencyStop() {
+        isEmergency = !isEmergency;
+        const btn = document.querySelector('.btn-emergency');
+        document.querySelectorAll('.train-container').forEach(t => t.classList.toggle('paused'));
+        btn.innerText = isEmergency ? "解除停止" : "緊急停止 Space";
+        btn.style.background = isEmergency ? "red" : "#000";
+    }
+
+    function toggleAuto() {
+        const btn = document.getElementById('autoBtn');
+        if (autoTimer) { clearInterval(autoTimer); autoTimer = null; btn.innerText = "開啟自動模式"; }
+        else { btn.innerText = "自動模式中..."; autoLoop(); }
+    }
+
+    function autoLoop() {
+        if (!autoTimer && !document.getElementById('autoBtn').innerText.includes("中")) return;
+        requestTrain(['tz', 'ck', 'lo'][Math.floor(Math.random()*3)], Math.random() > 0.5 ? 'south' : 'north', true);
+        autoTimer = setTimeout(autoLoop, Math.random() * 5000 + 4000);
+    }
+</script>
+</body>
+</html>
