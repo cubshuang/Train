@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Train Crossing ver2026 - 柵欄優化版</title>
+    <style>
+        body { margin: 0; background: #222; overflow: hidden; display: flex; justify-content: center; }
+        canvas { background: #458205; }
+    </style>
+</head>
+<body>
+<canvas id="cvs"></canvas>
+
+<script>
+const canvas = document.getElementById('cvs');
+const ctx = canvas.getContext('2d');
+canvas.width = 1000;
+canvas.height = 600;
+
+// --- 原始邏輯變數 ---
+let trainX = -2000;
+let gateAngle = 0; // 0 (垂直) 到 1 (水平)
+let gateState = 0; // 0: 靜止, 1: 下降, 2: 升起
+
+// --- 汽車系統 ---
+const traffic = {
+    lanes: [
+        { x: 465, dir: 1,  stopY: 250 }, // 北往南車道
+        { x: 505, dir: -1, stopY: 350 }  // 南往北車道
+    ],
+    cars: [],
+    spawnRate: 0.03
+};
+
+class Car {
+    constructor() {
+        const lane = traffic.lanes[Math.floor(Math.random() * 2)];
+        this.x = lane.x;
+        this.dir = lane.dir;
+        this.stopY = lane.stopY;
+        this.w = 30;
+        this.h = 50;
+        this.y = (this.dir === 1) ? -this.h : canvas.height;
+        this.speed = (3 + Math.random() * 2) * this.dir;
+        this.color = `hsl(${Math.random() * 360}, 70%, 50%)`;
+    }
+    update() {
+        const isClosed = gateAngle > 0.8;
+        const atGate = (this.dir === 1) 
+            ? (this.y + this.h > this.stopY - 15 && this.y < this.stopY)
+            : (this.y < this.stopY + 15 && this.y + this.h > this.stopY);
+
+        const carInFront = traffic.cars.find(c => 
+            c !== this && c.x === this.x && 
+            ((this.dir === 1 && c.y > this.y && c.y - (this.y + this.h) < 20) ||
+             (this.dir === -1 && c.y < this.y && this.y - (c.y + c.h) < 20))
+        );
+
+        if ((isClosed && atGate) || carInFront) {
+            // 保持停止
+        } else {
+            this.y += this.speed;
+        }
+    }
+    draw() {
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, this.w, this.h);
+        ctx.fillStyle = "rgba(255,255,255,0.4)";
+        let winY = (this.dir === 1) ? this.y + 35 : this.y + 5;
+        ctx.fillRect(this.x + 2, winY, this.w - 4, 10);
+    }
+}
+
+function mainLoop() {
+    ctx.fillStyle = "#458205"; // 草地
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 1. 道路與鐵軌
+    ctx.fillStyle = "#333"; // 道路
+    ctx.fillRect(450, 0, 100, canvas.height);
+    ctx.fillStyle = "#777"; // 鐵軌區
+    ctx.fillRect(0, 280, canvas.width, 40);
+
+    // 2. 汽車動畫 (位於火車下方)
+    if (Math.random() < traffic.spawnRate) traffic.cars.push(new Car());
+    traffic.cars.forEach((car, i) => {
+        car.update();
+        car.draw();
+        if (car.y < -100 || car.y > canvas.height + 100) traffic.cars.splice(i, 1);
+    });
+
+    // 3. 火車與柵欄邏輯
+    trainX += 10;
+    if (trainX > canvas.width + 500) {
+        trainX = -2500;
+        gateState = 2; // 升起
+    } else if (trainX > -600) {
+        gateState = 1; // 下降
+    }
+
+    // 更新柵欄角度
+    if (gateState === 1) gateAngle = Math.min(1, gateAngle + 0.03);
+    if (gateState === 2) gateAngle = Math.max(0, gateAngle - 0.03);
+
+    // --- 繪製柵欄 ---
+    ctx.lineWidth = 8;
+    ctx.strokeStyle = "white";
+
+    // 左側上方柵欄 (上往右下放：順時針旋轉)
+    ctx.save();
+    ctx.translate(450, 250); 
+    ctx.rotate((gateAngle - 1) * Math.PI / 2); // 旋轉：從垂直(-90度)到水平(0度)
+    ctx.beginPath();
+    ctx.moveTo(0, 0); ctx.lineTo(100, 0); 
+    ctx.strokeStyle = "red"; ctx.stroke();
+    ctx.restore();
+
+    // 右側下方柵欄 (下往左上放：逆時針旋轉)
+    ctx.save();
+    ctx.translate(550, 350);
+    ctx.rotate((1 - gateAngle) * Math.PI / 2); // 旋轉：從垂直(90度)到水平(0度)
+    ctx.beginPath();
+    ctx.moveTo(0, 0); ctx.lineTo(-100, 0);
+    ctx.strokeStyle = "red"; ctx.stroke();
+    ctx.restore();
+
+    // 4. 繪製火車 (最上層)
+    ctx.fillStyle = "#FFD700";
+    ctx.fillRect(trainX, 285, 1000, 30);
+    ctx.fillStyle = "black";
+    for(let j=0; j<10; j++) ctx.fillRect(trainX + j*100 + 10, 288, 60, 24); // 火車窗戶
+
+    requestAnimationFrame(mainLoop);
+}
+
+mainLoop();
+</script>
+</body>
+</html>
