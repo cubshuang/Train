@@ -93,19 +93,19 @@
 </head>
 <body>
  
-<div id="cctv-monitor">
+<!-- <div id="cctv-monitor">
     <div class="cctv-overlay">CCTV CH-1 <span id="rec-dot" style="color:red; display:none;">● REC</span></div>
     <div id="cctv-screen">
         <div id="cctv-live-content">
             <div class="forest-bg" id="cctv-forest"></div>
             <div class="road"></div>
             <div class="railway" style="width: 1000%"></div>
-            <!-- CCTV 鏡射支架與燈 -->
+            !-- CCTV 鏡射支架與燈 --
             <div class="signal-post cctv-sig" id="cctv-sig-l"><div class="pole"></div><div class="cross-arm"></div><div class="lamp left"></div><div class="lamp right"></div></div>
             <div class="signal-post right cctv-sig" id="cctv-sig-r"><div class="pole"></div><div class="cross-arm"></div><div class="lamp left"></div><div class="lamp right"></div></div>
         </div>
     </div>
-</div>
+</div> -->
  
 <div class="forest-bg" id="main-forest"></div>
 <div class="road"></div>
@@ -174,7 +174,8 @@
             t.style.fontSize = (25 + Math.random()*25) + 'px'; c.appendChild(t);
         }
     }
-    createForest('main-forest'); createForest('cctv-forest');
+    createForest('main-forest'); 
+    //createForest('cctv-forest');
  
     window.addEventListener('keydown', (e) => {
         if (e.code === 'Space') emergencyStop();
@@ -203,7 +204,7 @@
         if (trainCount > 0) {
             document.getElementById('bar-l').classList.add('down');
             document.getElementById('bar-r').classList.add('down');
-            document.getElementById('rec-dot').style.display = 'inline';
+            //document.getElementById('rec-dot').style.display = 'inline';
             sigs.forEach(s => s.classList.add('active'));
         } else {
             document.getElementById('bar-l').classList.remove('down');
@@ -261,7 +262,8 @@
         train.style.animation = `${dir === 'south' ? 'move-south' : 'move-north'} ${duration}s linear forwards`;
         //train.style.animation = `${dir === 'south' ? 'move-south' : 'move-north'} ${duration}s cubic-bezier(0.4, 0, 0.2, 1) forwards`;
         document.body.appendChild(train);
-        const mirror = train.cloneNode(true); document.getElementById('cctv-live-content').appendChild(mirror);
+        const mirror = train.cloneNode(true); 
+        //document.getElementById('cctv-live-content').appendChild(mirror);
         train.addEventListener('animationend', () => {
             train.remove(); mirror.remove(); trainCount--; updateDisplay();
         });
